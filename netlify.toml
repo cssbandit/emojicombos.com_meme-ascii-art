@@ -2,7 +2,18 @@
   publish = "."
   command = ""
 
-# No redirects needed - ASCII meme gallery is now the home page
+# Redirects for missing files
+[[redirects]]
+  from = "/manifest.json"
+  to = "/emojicombos.com/manifest.json"
+  status = 200
+
+[[redirects]]
+  from = "/heavy-plus-sign_2795.png"
+  to = "/emojicombos.com/heavy-plus-sign_2795.png"
+  status = 200
+
+# No other redirects needed - ASCII meme gallery is now the home page
 
 [build.environment]
   NODE_VERSION = "18"
@@ -10,7 +21,7 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
+    X-Frame-Options = "SAMEORIGIN"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
