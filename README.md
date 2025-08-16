@@ -46,8 +46,8 @@ npx serve .
 ## Project Structure
 
 ```
-├── index.html              # Main entry point
-├── emojicombos.com/        # ASCII meme content
+├── index.html              # ASCII meme gallery (home page)
+├── emojicombos.com/        # Additional ASCII meme content
 ├── netlify.toml           # Netlify configuration
 ├── .gitignore             # Git ignore rules
 └── README.md              # This file

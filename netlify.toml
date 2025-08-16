@@ -2,10 +2,7 @@
   publish = "."
   command = ""
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# No redirects needed - ASCII meme gallery is now the home page
 
 [build.environment]
   NODE_VERSION = "18"
