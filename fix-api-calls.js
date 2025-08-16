@@ -67,4 +67,29 @@ setTimeout(() => {
     });
 }, 100);
 
+// Block privacy popups and ads
+document.addEventListener('DOMContentLoaded', function() {
+    // Remove any privacy popups
+    const privacyElements = document.querySelectorAll('[id*="privacy"], [class*="privacy"], [id*="consent"], [class*="consent"], [id*="gdpr"], [class*="gdpr"]');
+    privacyElements.forEach(el => el.remove());
+    
+    // Block common ad/consent scripts
+    const scripts = document.querySelectorAll('script');
+    scripts.forEach(script => {
+        if (script.src && (script.src.includes('consent') || script.src.includes('gdpr') || script.src.includes('privacy'))) {
+            script.remove();
+        }
+    });
+});
+
+// Also block iframes that might contain privacy popups
+const originalCreateElement = document.createElement;
+document.createElement = function(tagName) {
+    const element = originalCreateElement.call(document, tagName);
+    if (tagName.toLowerCase() === 'iframe') {
+        element.style.display = 'none';
+    }
+    return element;
+};
+
 console.log('API calls fixed for local deployment');
