@@ -1,0 +1,27 @@
+# Cache directories
+hts-cache/
+cdn.jsdelivr.net/
+pagead2.googlesyndication.com/
+
+# Log files
+hts-log.txt
+cookies.txt
+
+# Large backup files
+*.zip
+*.tar.gz
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Node modules (if any)
+node_modules/
+
+# Environment files
+.env
+.env.local
