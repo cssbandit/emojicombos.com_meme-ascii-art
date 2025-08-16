@@ -13,6 +13,16 @@
   to = "/emojicombos.com/heavy-plus-sign_2795.png"
   status = 200
 
+[[redirects]]
+  from = "/dot-art-generator.html"
+  to = "/emojicombos.com/dot-art-generator.html"
+  status = 200
+
+[[redirects]]
+  from = "/heavy-plus-sign-192x192.png"
+  to = "/emojicombos.com/heavy-plus-sign_2795.png"
+  status = 200
+
 # No other redirects needed - ASCII meme gallery is now the home page
 
 [build.environment]
