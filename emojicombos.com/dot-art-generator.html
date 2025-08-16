@@ -116,6 +116,85 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Submit Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .form-group textarea {
+            height: 100px;
+            font-family: monospace;
+            font-size: 8px;
+            resize: vertical;
+        }
+        
+        .submit-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .submit-btn:hover {
+            background: #218838;
+        }
     </style>
     <script src="../fix-api-calls.js"></script>
 </head>
@@ -179,6 +258,36 @@
         <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
         <button class="copy-btn" onclick="invertASCII()">🔄 Invert</button>
         <button class="copy-btn" onclick="downloadText()">💾 Download as .txt</button>
+        <button class="copy-btn" onclick="submitToGallery()" style="background: #007bff;">🎨 Submit to Gallery</button>
+    </div>
+
+    <!-- Submit Modal -->
+    <div id="submitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Submit ASCII Art to Gallery</h3>
+                <span class="close" onclick="closeSubmitModal()">&times;</span>
+            </div>
+            <form id="submitForm">
+                <div class="form-group">
+                    <label for="asciiArt">ASCII Art:</label>
+                    <textarea id="asciiArt" readonly></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" placeholder="Enter a title for your ASCII art" required>
+                </div>
+                <div class="form-group">
+                    <label for="tags">Tags (comma-separated):</label>
+                    <input type="text" id="tags" placeholder="ascii art, text art, meme, etc." required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description (optional):</label>
+                    <input type="text" id="description" placeholder="Brief description of your creation">
+                </div>
+                <button type="submit" class="submit-btn">Submit to Gallery</button>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -337,6 +446,67 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        // Submit to gallery functions
+        function submitToGallery() {
+            if (!currentASCII) {
+                alert('Please generate some ASCII art first!');
+                return;
+            }
+            
+            document.getElementById('asciiArt').value = currentASCII;
+            document.getElementById('submitModal').style.display = 'block';
+        }
+
+        function closeSubmitModal() {
+            document.getElementById('submitModal').style.display = 'none';
+        }
+
+        // Handle form submission
+        document.getElementById('submitForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const tags = document.getElementById('tags').value;
+            const description = document.getElementById('description').value;
+            
+            if (!title || !tags) {
+                alert('Please fill in the title and tags!');
+                return;
+            }
+            
+            // Create submission data
+            const submission = {
+                asciiArt: currentASCII,
+                title: title,
+                tags: tags.split(',').map(tag => tag.trim()),
+                description: description,
+                timestamp: new Date().toISOString(),
+                votes: 0
+            };
+            
+            // Store in localStorage for now (in a real app, this would go to a database)
+            const submissions = JSON.parse(localStorage.getItem('asciiSubmissions') || '[]');
+            submissions.push(submission);
+            localStorage.setItem('asciiSubmissions', JSON.stringify(submissions));
+            
+            alert('Your ASCII art has been submitted to the gallery! 🎉\n\nNote: This is a demo version. In a full implementation, this would be saved to a database and displayed on the main gallery page.');
+            
+            closeSubmitModal();
+            
+            // Clear form
+            document.getElementById('title').value = '';
+            document.getElementById('tags').value = '';
+            document.getElementById('description').value = '';
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('submitModal');
+            if (event.target === modal) {
+                closeSubmitModal();
+            }
         }
 
         // Drag and drop support
