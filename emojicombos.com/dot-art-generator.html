@@ -1,232 +1,373 @@
 <!DOCTYPE html>
 <html>
-  
-<!-- Mirrored from emojicombos.com/dot-art-generator by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 16 Aug 2025 11:37:48 GMT -->
-<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <link rel="canonical" href="dot-art-generator.html">
-    <meta name="color-scheme" content="dark light">
-    <title>Image to Dot Art Generator (Text Art Maker)</title>
-  </head>
-  <body>
-    <script async src="../cdn.jsdelivr.net/npm/onnxruntime-web%401.10.0/dist/ort.js"></script>
-    <script async src="js/filter.bundle.js"></script>
-    <!-- <script async src="/js/createImageBitmapPolyfill.js"></script> --> <!-- not needed anyway? seems like webkit actually has support for resizeWidth -->
-    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;display=swap" rel="stylesheet">
-
+    <title>Image to ASCII Art Generator</title>
     <style>
-      body {
-        background: #eee;
-        font-family: 'Roboto', sans-serif;
-      }
-      body * {
-        box-sizing: border-box;
-      }
-      .step-module {
-        width: 95vw;
-        max-width: 900px;
-        margin: 0 auto;
-        margin-bottom: 1rem;
-        padding: 0.25rem;
-        border-radius: 3px;
-        box-shadow: 0px 1px 1px #b4b4b4;
-        background: white;
-      }
-      .step-module .step-header {
-        border-bottom: 1px solid lightgrey;
-        margin:0.5rem;
-        margin-top:0rem;
-      }
-      .step-module .step-body {
-        margin:0.5rem;
-      }
-      .step-body .step-body-section {
-        display:flex;
-        margin: 0.6rem 0;
-        align-items: center;
-      }
-      button {
-        cursor: pointer;
-      }
-      #loadingAnchorMessageCtn {
-        border-top: 1px solid #dbdbdb;
-        background-color:#ffc876;
-      }
-      @media (prefers-color-scheme: dark) {
         body {
-          background:#000000;
-          color: #d6d6d6;
+            background: #eee;
+            font-family: 'Arial', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        .step-module {
-          box-shadow: 0px 1px 1px #3f3f3f;
-          background: #242424;
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
-        #loadingAnchorMessageCtn {
-          border-top: 1px solid rgb(172 101 0);
-          background-color: rgb(109 64 0);
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        .settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .setting-group label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .setting-group input, .setting-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .ascii-output {
+            font-family: monospace;
+            font-size: 8px;
+            line-height: 1;
+            white-space: pre;
+            background: #f8f9fa;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+        .copy-btn {
+            background: #28a745;
+            margin: 5px;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        .copy-btn:hover {
+            background: #218838;
+        }
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
         }
         .spinner {
-          filter: invert(1);
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
         }
-      }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #333;">Image to ASCII Art Generator</h1>
+    <p style="text-align: center; color: #666; margin-bottom: 30px;">
+        Convert images to ASCII art using simple characters. Perfect for creating text-based art!
+    </p>
 
-    <h1 style="text-align:center; font-size:1.5rem;">Image to Dot Art Generator</h1>
-    <h2 style="overflow:hidden; margin:0; height:0px;"><b>Create text art</b> using this simple <b>image to text art</b> converter. Create your own custom ASCII art that you can copy and paste. Converts images to <b>braille</b> text.</h2>
-
-    <p style="text-align:center; font-size:0.8rem; color:grey; max-width:400px; margin:0 auto;margin-bottom: 1rem;">Also try our <a style="" href="dot-art-editor.html" target="_blank">dot art editor</a> and our <a style="" href="emoji-art-editor.html" target="_blank">emoji art editor</a>.</p>
-
-    <div class="step-module">
-      <h3 class="step-header">Choose image(s)</h3>
-      <div class="step-body">
-        <input type="file" multiple="multiple" accept="image/*" id="fileInputEl">
-        <div style="font-size: 75%;margin-top: 0.5rem;"><b>Tip</b>: Use an <a href="https://perchance.org/ai-icon-generator" target="_blank">AI icon generator</a> (with 'flat' style) to create source images.</div>
-      </div>
+    <div class="container">
+        <h3>Step 1: Choose an Image</h3>
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+            <p>Click here to select an image or drag and drop</p>
+            <p style="font-size: 12px; color: #666;">Supports: JPG, PNG, GIF, WebP</p>
+        </div>
+        <div id="imagePreview"></div>
     </div>
 
-    <div class="step-module" id="settingsModule">
-      <h3 class="step-header">Settings</h3>
-      <div class="step-body">
-        <div class="step-body-section" style="font-size:0.8rem; color:grey;">
-          The image will be converted into pure black and white using a threshold, and then the resulting image will be converted into text art using Braille Unicode characters.
-        </div>
-        <div class="step-body-section">
-          <!--<div>
-            <span style="min-width:max-content;">Convert to line art?</span> <input id="lineArtCheckboxEl" type="checkbox" checked oninput="thresholdMinEl.value=window.defaultThresholds[this.checked].min; thresholdMaxEl.value=window.defaultThresholds[this.checked].max;">
-            <div style="font-size:0.7rem; color:grey;">Useful for images that don't have much light/dark contrast.</div>
-          </div>-->
-          <div>
-            <span style="min-width:max-content;">Mode:</span>
-            <select id="modeSelectEl" type="checkbox" checked="checked" oninput='thresholdMinEl.value=window.defaultThresholds[this.value].min,thresholdMaxEl.value=window.defaultThresholds[this.value].max,contrastBoostCtn.style.display="contrast"==this.value?"":"none",thresholdRangeCtn.style.display="auto"==this.value?"none":"",autoModeThresholdCtn.style.display="auto"==this.value?"":"none",thickenLinesCtn.style.display="auto"==this.value?"":"none",lineDetectionSensitivityCtn.style.display="auto"==this.value?"":"none"'>
-              <option value="auto">auto</option>
-              <option value="lineart">convert to line art</option>
-              <!-- <option value="contrast">boost contrast</option> -->
-              <option value="dither">dither (shading)</option>
-            </select>
-            <div style="font-size:0.7rem; color:grey;">This determines the pre-processing that is applied to the image before thesholding it into a pure black and white image. Certain modes work best for certain types of images. If the resulting dot art looks bad, try another mode, or adjust some settings.</div>
-          </div>
-        </div>
-        <div class="step-body-section">
-          <div style="width:100%;">
-            <div style="min-width:max-content; display:flex;justify-content: space-between;font-size: 85%;">
-              <div>← make it <b>smaller</b></div>
-              <div><b>more detailed</b> →</div>
+    <div class="container">
+        <h3>Step 2: Settings</h3>
+        <div class="settings">
+            <div class="setting-group">
+                <label for="width">Width (characters):</label>
+                <input type="range" id="width" min="20" max="200" value="80" oninput="document.getElementById('widthValue').textContent = this.value">
+                <span id="widthValue">80</span>
             </div>
-            <div style="display:flex;">
-              <input type="range" style="height:min-content; flex-grow:1;" min="1" step="1" value="50" max="200" oninput="textWidthEl.value=this.value">
-              <input id="textWidthEl" type="number" style="width:50px; height:min-content;" min="1" step="1" value="50">
+            <div class="setting-group">
+                <label for="threshold">Threshold:</label>
+                <input type="range" id="threshold" min="0" max="255" value="128" oninput="document.getElementById('thresholdValue').textContent = this.value">
+                <span id="thresholdValue">128</span>
             </div>
-            <div style="font-size:0.7rem; color:grey;">A larger value produces <b>higher-resolution</b> text art, but note that wide dot art will be distorted by line wrapping if copy-pasted into places that aren't wide enough. So ideally you should choose a size that is big enough to show all the important details, but no bigger.</div>
-          </div>
-        </div>
-        <div class="step-body-section" id="thresholdRangeCtn" style="display:none;">
-          <div>
-            <span style="min-width:max-content;">Threshold range:</span>&nbsp;<input id="thresholdMinEl" type="number" style="width:50px;" min="0" max="1" step="0.01" value="">&nbsp;to&nbsp;<input id="thresholdMaxEl" type="number" style="width:50px;" min="0" max="1" step="0.01" value="">
-            <div style="font-size:0.7rem; color:grey;">The threshold value (between zero and one) is the cut-off greyscale which decides whether a pixel is made black or white. Several versions of the dot art will be created within this range of thresholds.</div>
-          </div>
-        </div>
-        <div class="step-body-section" id="autoModeThresholdCtn">
-          <div style="width:100%;">
-            <div style="min-width:max-content; display:flex;justify-content: space-between;font-size: 85%;">
-              <div>← make it <b>darker</b></div>
-              <div>make it <b>lighter</b> →</div>
+            <div class="setting-group">
+                <label for="charset">Character Set:</label>
+                <select id="charset">
+                    <option value="standard">Standard (.,:;+=xX$&@)</option>
+                    <option value="simple">Simple (.#)</option>
+                    <option value="blocks">Blocks (█▓▒░)</option>
+                    <option value="braille">Braille (⠀⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿)</option>
+                </select>
             </div>
-            <input id="autoModeThresholdEl" type="range" style="width:100%;" min="0.01" max="0.99" step="0.01" value="0.80" data-default-value="0.80">
-            <div style="font-size:0.7rem; color:grey;">This adjusts the "cut-off" value at which the pixels become white or black. You should adjust it if the overall result has too much black or too much white.</div>
-          </div>
-        </div>
-        <div class="step-body-section" id="lineDetectionSensitivityCtn">
-          <div style="width:100%;">
-            <div style="min-width:max-content; display:flex;justify-content: space-between;font-size: 85%;">
-              <div>← fewer lines</div>
-              <div>more lines →</div>
+            <div class="setting-group">
+                <label for="invert">Invert Colors:</label>
+                <input type="checkbox" id="invert">
             </div>
-            <input id="lineDetectionSensitivityEl" type="range" style="width:100%;" min="0" max="20" step="1" value="9">
-            <div style="font-size:0.7rem; color:grey;">Move this up to <b>make line detection more sensitive</b>. A high value means many subtle lines in the image will be detected. If it's too high, you may see lots of messy dots and marks in the output image.</div>
-          </div>
         </div>
-        <div class="step-body-section" id="thickenLinesCtn">
-          <div style="width:100%;">
-            <!-- line thickness as *percentage* of min(width, height) -->
-            <div style="min-width:max-content; display:flex;justify-content: space-between;font-size: 85%;">
-              <div>← thinner lines</div>
-              <div>thicker lines →</div>
-            </div>
-            <input id="erodeKernelStepsEl" type="range" style="width:100%;" min="0" max="10" step="1" value="2">
-            <div style="font-size:0.7rem; color:grey;">Use this slider to <b>thicken the detected lines</b>.</div>
-          </div>
+    </div>
+
+    <div class="container">
+        <h3>Step 3: Generate ASCII Art</h3>
+        <button id="generateBtn" onclick="generateASCII()" disabled>Generate ASCII Art</button>
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing image...</p>
         </div>
-
-        <!-- removed this because by default we're now generating both dithered and undithered results when in auto mode -->
-        <!-- <div class="step-body-section" id="autoModeDitherCtn" style="display:none;"> 
-          <div style="width:100%; display:flex;">
-            Enable shading / dithering: <input id="enableAutoModeDitherEl" type="checkbox" oninput="erodeKernelStepsEl.disabled=this.checked?true:false; autoModeThresholdEl.value=this.checked?0.65:autoModeThresholdEl.dataset.defaultValue">
-          </div>
-        </div> -->
-
-        <div class="step-body-section" id="contrastBoostCtn" style="display:none;">
-          <div>
-            <span style="min-width:max-content;">Contrast boost:</span>&nbsp;<input id="contrastBoostEl" type="number" style="width:50px; height:min-content;" min="1" step="0.1" value="1">
-            <div style="font-size:0.7rem; color:grey;">Higher values will increase the contrast of the image, which can help with thresholding. Only used in non-line-art mode. A value of 1 does nothing.</div>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <div class="step-module">
-      <h3 class="step-header">Generate</h3>
-      <div class="step-body">
-        <button id="startBtn" style="padding:0.5rem;">Generate Text Art</button>
-      </div>
+    <div id="results" class="container" style="display: none;">
+        <h3>Results</h3>
+        <div id="asciiOutput" class="ascii-output"></div>
+        <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+        <button class="copy-btn" onclick="invertASCII()">🔄 Invert</button>
+        <button class="copy-btn" onclick="downloadText()">💾 Download as .txt</button>
     </div>
 
-    <div id="resultsModule" class="step-module" style="max-width:none; display:none;">
-      <h3 class="step-header">Results</h3>
-      <div class="step-body">
-        <div class="step-body-section" style="font-size:0.8rem; color:grey;" id="defaultResultsSubtitleCtn">
-          If the result doesn't look good, adjust the settings above and try again.
-        </div>
-        <div id="outputEl" style="display:flex; overflow-x:auto;"></div>
-      </div>
-    </div>
-
-    <p style="text-align:center; font-size:0.8rem; color:grey; max-width:400px; margin:0 auto;">If you've found a bug or have feature ideas, you can <a style="color:inherit;" href="https://docs.google.com/forms/d/e/1FAIpQLSfBuModsHaC0GftfmpQbEVR4nwhoua0_N_VobolS22NkFYQew/viewform?usp=sf_link" target="_blank">provide feedback here</a>. Thanks to <a style="color:inherit;" href="https://github.com/LachlanArthur/Braille-ASCII-Art" target="_blank">@LachlanArthur</a> and <a style="color:inherit;" href="https://github.com/carolineec/informative-drawings" target="_blank">@carolineec</a> for code that powers certain aspects of this generator.</p>
-
-    <br><br><br><br><br><br><br><br><br>
-    
-    <div id="loadingAnchorMessageCtn" style="display:none; position:fixed; bottom:0; padding:0.5rem; right:0; left:0; align-items:center;">
-      <div class="spinner"></div><style>.spinner { width: 40px; height: 40px; background-color: #333; border-radius: 100%; -webkit-animation: sk-scaleout 1.0s infinite ease-in-out; animation: sk-scaleout 1.0s infinite ease-in-out; } @-webkit-keyframes sk-scaleout { 0% { -webkit-transform: scale(0) } 100% { -webkit-transform: scale(1.0); opacity: 0; } } @keyframes sk-scaleout { 0% { -webkit-transform: scale(0); transform: scale(0); } 100% { -webkit-transform: scale(1.0); transform: scale(1.0); opacity: 0; } }</style>
-      <div style="margin-left: 0.5rem;" id="loadingAnchorMessageTextEl">Processing...</div>
-    </div>
-
-    <button id="embedToFullscreenBtn" style="display:none; position:fixed; bottom:0.5rem; right:0.5rem; cursor:pointer;" onclick='window.top.location.href="dot-art-generator.html"'>View Fullscreen</button>
-    <script>window.self!==window.top&&(embedToFullscreenBtn.style.display="")</script>
-
-    <!-- <div id="saveTextModal" style="position:fixed;top:0;left:0;right:0;bottom:0;display: flex;align-items: center;justify-content: center;z-index: 10000;background: rgba(0,0,0,0.5); display:none;">
-      <div onclick="this.parentNode.style.display='none';" style="position:absolute; top:0;left:0;right:0;bottom:0; z-index: 5;"></div>
-      <iframe id="saveTextIframe" style="border:0;width: 80vw;height: 80vh;position: fixed;z-index: 10;box-shadow: 0px 1px 4px 2px #5a5a5a;border-radius: 3px; background:#efefef;" src="about:blank" allow="clipboard-write"></iframe>
-    </div>
     <script>
-      async function showSaveTextModal(text) {
-        let hashData = {text};
-        saveTextIframe.src = 'about:blank'; // <-- reset the iframe
-        await sleep(10);
-        saveTextIframe.src = `https://emojicombos.com/submit#${encodeURIComponent(hashData)}`;
-        saveTextModal.style.display = 'flex';
-        try { gtag('event', 'save_dot_art_click', {}); } catch(e) { console.error(e); }
-      }
-    </script> -->
-    
-    <script type="module">const e=document.querySelector.bind(document);let t=[];e("#startBtn").addEventListener("click",(async function(){await async function(){if(!t[0])return alert("Please choose one or more images first.");startBtn.disabled=!0,startBtn.innerHTML="Loading. Please wait...";let n=[...document.querySelectorAll("#settingsModule input:not([disabled]), #settingsModule select:not([disabled])")];n.forEach((e=>e.disabled=!0)),i&&(startBtn.innerHTML="Loading. Please wait... (first time will take longer)",i=!1);e("#loadingAnchorMessageCtn").style.display="flex",e("#loadingAnchorMessageTextEl").innerHTML="Processing...";for(let n of t)for(let t=0;t<2;t++){if(window.doDitherDuringAutoMode=!1,"auto"!==e("#modeSelectEl").value)continue;let i;if(1===t&&(window.doDitherDuringAutoMode=!0),"lineart"===e("#modeSelectEl").value)i=await d(n);else if("contrast"===e("#modeSelectEl").value)i=await r(n);else if("dither"===e("#modeSelectEl").value){let t=.5,a=Number(e("#textWidthEl").value);i=await w(n,a,t)}else"auto"===e("#modeSelectEl").value&&(i=await o(n));resultsModule.style.display="";let l=document.createElement("div");l.style="margin:1rem;",l.classList.add("dot-art-column"),e("#outputEl").prepend(l);let s=0,h={auto:"Pre-processed image",lineart:"Line art image",contrast:"Contrast-boosted image",dither:"Dithered image"};for(let t of[n,i]){let n=URL.createObjectURL(t),a=0===s?"Input image":h[e("#modeSelectEl").value];l.innerHTML+=`\n                <div style="margin-top:1rem;">\n                  <div style="font-size:0.8rem; color:grey; font-weight:bold;">${a}:</div>\n                  <img src="${n}" style="width:170px;">\n                </div>\n              `,s++}let m=255*Number(e("#thresholdMinEl").value),u=255*Number(e("#thresholdMaxEl").value);(m>u||isNaN(m)||isNaN(u))&&(alert("Looks like you've specified an invalid start and/or end threshold. Reverting to defaults."),m=255*Number(window.defaultThresholds[e("#modeSelectEl").value].min),u=255*Number(window.defaultThresholds[e("#modeSelectEl").value].max));let g=u-m,p=15;g<100&&(p=10),g<25&&(p=5),g<25&&(p=5),0===g&&(p=1);let f=g/p;f<1&&(f=1);let v='<div class="loadingMessage" style="font-weight: bold;text-align: center;font-size: 1.5rem; margin-top:0.5rem;">Loading...</div>';l.innerHTML+=v;let y=Number(e("#textWidthEl").value),b=[y];if("auto"===e("#modeSelectEl").value){let e=y;b.unshift(Math.round(.6*e)),b.push(Math.round(1.3*e))}for(let t of b){let o;if("auto"===e("#modeSelectEl").value&&window.doDitherDuringAutoMode){let n=2*Number(e("#autoModeThresholdEl").value);o=await w(i,t,n)}else o=i;for(let i=m;i<=u;i+=f){e("#loadingAnchorMessageTextEl").innerHTML=`Processing threshold=${(i/255).toFixed(2)}, width=${t} ...`;let r=await c(o,Math.round(i),t),d="⠀",s=Math.min(...r.map((e=>e.match(new RegExp(`^(${d}+)`))?.[1].length||0))),h=Math.min(...r.map((e=>e.match(new RegExp(`(${d}+)$`))?.[1].length||0)));if(r=r.map((e=>e.slice(s,h?-h:e.length))),""===r.join("").replaceAll(d,"").trim()){l.querySelector(".loadingMessage").remove(),l.innerHTML+=`\n                    <div style="margin-top:1rem;">\n                      <div style="font-size:0.8rem; color:grey;">Got blank result for threshold=${(i/255).toFixed(2)}.</div>\n                    </div>\n                    ${v}`;continue}for(;!r[0].replaceAll(d,"");)r=r.slice(1);for(;!r[r.length-1].replaceAll(d,"");)r=r.slice(0,-1);l.querySelector(".loadingMessage").remove();let m=a++;l.innerHTML+=`\n                  <div style="margin-top:1rem;">\n                    <div style="font-size:0.8rem; color:grey;">With threshold=${(i/255).toFixed(2)}, width=${t}, characters=${r.join("\n").length}</div>\n                    <div id="result${m}" data-filename="${n.name}" data-width="${t}" contenteditable spellcheck="false" style="font-size:8px; white-space:pre; border:1px solid #cccccc; width:min-content; padding:0.25rem;">${r.join("\n")}</div>\n                    <div>\n                      <button id="copyBtn${m}" data-text="${r.join("\n")}" data-preprocessing-mode="${e("#modeSelectEl").value}" data-inverted="0" onclick="window.copyDotArtClickHandler(this); this.innerHTML='✅ copied!'; this.disabled=true; setTimeout(() => {this.innerHTML='📋 copy'; this.disabled=false;}, 1500);">📋 copy</button>\n                      <button onclick="copyBtn${m}.dataset.text=window.invertDotArt(copyBtn${m}.dataset.text); result${m}.innerHTML=invertDotArt(result${m}.innerHTML); copyBtn${m}.dataset.inverted=copyBtn${m}.dataset.inverted=='0'?'1':'0';">🔄 invert</button>\n                      <button onclick="window.openSaveTextWindow(copyBtn${m}.dataset.text)">💾 save/submit</button>\n                      <button onclick="window.openEditDotArtWindow(copyBtn${m}.dataset.text)">✏️ edit</button>\n                    </div>\n                  </div>\n                  ${v}\n                `}}l.querySelector(".loadingMessage").remove(),l.innerHTML+='<div style="font-size:80%; color:grey; margin-top:1rem;"><b style="color:#df1d1d;">Important tip</b>: Smaller-width dot art is generally better because it can fit within comment character limits and can be viewed on small screens without distortion via line-wrapping. Choose the <u>smallest size</u> that\'s still clear/legible.</div>'}startBtn.innerHTML="Generate Text Art",e("#loadingAnchorMessageCtn").style.display="none",startBtn.disabled=!1,n.forEach((e=>e.disabled=!1))}()})),e("#fileInputEl").addEventListener("input",(async function(e){t=[];for(let e of this.files)t.push(await n(e))}));async function n(e){let t=await createImageBitmap(e);t.width>768&&(t=await createImageBitmap(e,{resizeWidth:768}));let n=t.width,a=t.height;n>20&&(n%4!=0&&(n-=n%4),a%4!=0&&(a-=a%4));let i=new OffscreenCanvas(n,a);i.getContext("2d").drawImage(t,0,0);let o=await i.convertToBlob({type:"image/jpg"});return o.name=e.name,o}let a=0;!async function(){for(;!window.ort;)await u(100);self.crossOriginIsolated&&(window.ort.env.wasm.numThreads=navigator.hardwareConcurrency/2);try{const e=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]));console.log("simd support:",await e()),await e()||(window.ort.env.wasm.numThreads=1)}catch(e){console.log(e.message)}console.log(`Num wasm threads: ${window.ort.env.wasm.numThreads}`),ort.env.wasm.proxy=!0,console.log("Downloading model...."),window.onnxSession=await window.ort.InferenceSession.create("/line-art-model.onnx",{executionProviders:["wasm"]}),console.log("Model loaded.")}(),window.defaultThresholds={auto:{min:.5,max:.5},lineart:{min:.75,max:.95},contrast:{min:.05,max:.95},dither:{min:.5,max:.5}},e("#thresholdMinEl").value=window.defaultThresholds[e("#modeSelectEl").value].min,e("#thresholdMaxEl").value=window.defaultThresholds[e("#modeSelectEl").value].max;let i=!0;async function o(t){await createImageBitmap(t);let n=await async function(e){let t=await createImageBitmap(e),n=new OffscreenCanvas(t.width,t.height),a=n.getContext("2d");a.fillStyle="white",a.fillRect(0,0,t.width,t.height),a.drawImage(t,0,0);let i=a.getImageData(0,0,n.width,n.height),o=i.data,r=new Array(256).fill(0),l=n.width*n.height;for(let e=0;e<o.length;e+=4){let t=Math.round((o[e+0]+o[e+1]+o[e+2])/3);r[t]=r[t]+1}for(let e=0;e<r.length;e++)r[e]=Math.round(1e4*r[e]/l);let d=255;for(let e=0,t=0;e<r.length;e++){if(t+=r[e],t>=30){d=e;break}if(r[e]>2){d=e;break}}let s=0;for(let e=r.length,t=0;e>=0;e--){if(t+=r[e],t>=30){s=e;break}if(r[e]>2){s=e;break}}const c=(e,t,n)=>e<=t?0:e>=n?n:(e-t)/(n-t);for(let e=0;e<o.length;e+=4)o[e+0]=255*c(o[e+0],d,s),o[e+1]=255*c(o[e+1],d,s),o[e+2]=255*c(o[e+2],d,s),o[e+3]=255;return a.putImageData(i,0,0),n.convertToBlob({type:"image/png"})}(t),a=await d(t),i=await createImageBitmap(n),o=await createImageBitmap(a),r=i.width,l=i.height,s=new OffscreenCanvas(r,l),c=s.getContext("2d");c.drawImage(i,0,0);let h=Number(e("#lineDetectionSensitivityEl").value)||0;c.filter="",c.globalCompositeOperation="multiply";for(let e=0;e<h;e++)c.drawImage(o,0,0,i.width,i.height);let m=await s.convertToBlob({type:"image/png"});if(window.doDitherDuringAutoMode)return m;let w=Number(e("#autoModeThresholdEl").value);w||(w=.5),w=1-w,w=Math.round(255*w);let u=Number(e("#erodeKernelStepsEl").value),g=await async function(e,t={}){let n=await createImageBitmap(e),a=new OffscreenCanvas(1e3,n.height/n.width*1e3),i=a.getContext("2d");i.drawImage(n,0,0,a.width,a.height);let o=await a.convertToBlob({type:"image/png"}),r=URL.createObjectURL(o),l=await new Promise((e=>window.FILTER.IO.HTMLImageLoader.load(r,e)));URL.revokeObjectURL(r);let d=[];t.threshold&&d.push(window.FILTER.ColorMatrixFilter().threshold(t.threshold));let s=void 0===t.erodeKernelSteps?1:t.erodeKernelSteps;for(let e=0;e<s??1;e++)d.push(window.FILTER.StatisticalFilter().erode(3).setMode(window.FILTER.MODE.GRAY));l.apply(window.FILTER.CompositeFilter(d));let c=l.toImage(),h=new Image;await new Promise((e=>h.onload=e),h.src=c),i.clearRect(0,0,a.width,a.height),i.drawImage(h,0,0);let m=new OffscreenCanvas(n.width,n.height);m.getContext("2d").drawImage(a,0,0,n.width,n.height);let w=await m.convertToBlob({type:"image/png"});if(t.debug){if(!document.querySelector("img.debug-lineArtFilter")){let e=document.createElement("img");e.classList.add("debug-lineArtFilter"),document.body.appendChild(e)}document.querySelector("img.debug-lineArtFilter").src=URL.createObjectURL(w)}return w}(m,{threshold:w,erodeKernelSteps:u});return g}async function r(t){let n=await createImageBitmap(t),a=new OffscreenCanvas(n.width,n.height),i=a.getContext("2d");return i.fillStyle="white",i.fillRect(0,0,n.width,n.height),i.filter=`contrast(${e("#contrastBoostEl").value})`,i.drawImage(n,0,0),a.convertToBlob({type:"image/png"})}let l=new Map;async function d(e,t={}){for(;!window.onnxSession;)await u(100);if(l.has(e))return l.get(e);let{data:n,width:a,height:i}=await async function(e,t={}){let n=await createImageBitmap(e),a=new OffscreenCanvas(n.width,n.height),i=a.getContext("2d");i.drawImage(n,0,0,a.width,a.height);let o=i.getImageData(0,0,a.width,a.height),r=[[],[],[]],l=o.data;for(let e=0;e<l.length;e+=4){let t=e/4%a.width,n=Math.floor(e/4/a.width);r[0][n]||(r[0][n]=[]),r[1][n]||(r[1][n]=[]),r[2][n]||(r[2][n]=[]),r[0][n][t]=l[e+0]/255,r[1][n][t]=l[e+1]/255,r[2][n][t]=l[e+2]/255}return r=Float32Array.from(r.flat().flat()),{data:r,width:n.width,height:n.height}}(e);const o={input:new window.ort.Tensor("float32",n,[1,3,i,a])},r=(await onnxSession.run(o)).output;let d=await async function(e,t,n={}){let a=[],i=!!n.invert;for(let t=0;t<e.length;t++){let n=e[t];i&&(n=1-n),a.push(255*n),a.push(255*n),a.push(255*n),a.push(255)}let o=new ImageData(new Uint8ClampedArray(a),t.width,t.height),r=new OffscreenCanvas(t.width,t.height);return r.getContext("2d").putImageData(o,0,0),r.convertToBlob({type:"image/png"})}(r.data,{width:r.dims[3],height:r.dims[2]});if(l.set(e,d),l.size>100&&(l=new Map),window.DEBUG){let e=document.createElement("img");e.src=URL.createObjectURL(d),document.body.appendChild(e)}return d}window.openSaveTextWindow=function(e){let t={text:e};window.open(`https://emojicombos.com/submit#${encodeURIComponent(JSON.stringify(t))}`,"_blank");try{gtag("event","save_dot_art_from_generator_click",{})}catch(e){console.error(e)}},window.openEditDotArtWindow=function(e){let t={text:e};window.open(`https://emojicombos.com/dot-art-editor#${encodeURIComponent(JSON.stringify(t))}`,"_blank")};function s(e,t,n,a,i){let o,r,l=e.data,d=[];for(r=0;r<i;r++){let i=4*(t+(n+r)*e.width);for(o=0;o<a;o++)d.push(l[i++]),d.push(l[i++]),d.push(l[i++]),d.push(l[i++])}return new Uint8ClampedArray(d)}async function c(e,t=127,n=100){let a=await createImageBitmap(e),i=[],o=Math.ceil(2*n*(a.height/a.width)/4),r=new OffscreenCanvas(2*n,4*o),l=r.getContext("2d");l.drawImage(a,0,0,r.width,r.height);let d=l.getImageData(0,0,r.width,r.height);for(let e=0;e<r.height;e+=4){let n="";for(let a=0;a<r.width;a+=2){n+=`${h(s(d,a,e,2,4),t)}`}i.push(n)}return i}function h(e,t){if(32!==e.length)throw TypeError("Braille image data must be 2px wide and 4px high.");let n=[];for(let t=0;t<8;t++)n[t]=e.subarray(4*t,4*(t+1));return n=[n[0],n[2],n[4],n[1],n[3],n[5],n[6],n[7]],n=n.map((([e,t,n,a])=>(e+t+n)/3)).map((e=>+(e<t))),String.fromCharCode(10240+parseInt(n.reverse().join(""),2))}const m={"⠀":"⣿","⠁":"⣾","⠂":"⣽","⠃":"⣼","⠄":"⣻","⠅":"⣺","⠆":"⣹","⠇":"⣸","⠈":"⣷","⠉":"⣶","⠊":"⣵","⠋":"⣴","⠌":"⣳","⠍":"⣲","⠎":"⣱","⠏":"⣰","⠐":"⣯","⠑":"⣮","⠒":"⣭","⠓":"⣬","⠔":"⣫","⠕":"⣪","⠖":"⣩","⠗":"⣨","⠘":"⣧","⠙":"⣦","⠚":"⣥","⠛":"⣤","⠜":"⣣","⠝":"⣢","⠞":"⣡","⠟":"⣠","⠠":"⣟","⠡":"⣞","⠢":"⣝","⠣":"⣜","⠤":"⣛","⠥":"⣚","⠦":"⣙","⠧":"⣘","⠨":"⣗","⠩":"⣖","⠪":"⣕","⠫":"⣔","⠬":"⣓","⠭":"⣒","⠮":"⣑","⠯":"⣐","⠰":"⣏","⠱":"⣎","⠲":"⣍","⠳":"⣌","⠴":"⣋","⠵":"⣊","⠶":"⣉","⠷":"⣈","⠸":"⣇","⠹":"⣆","⠺":"⣅","⠻":"⣄","⠼":"⣃","⠽":"⣂","⠾":"⣁","⠿":"⣀","⡀":"⢿","⡁":"⢾","⡂":"⢽","⡃":"⢼","⡄":"⢻","⡅":"⢺","⡆":"⢹","⡇":"⢸","⡈":"⢷","⡉":"⢶","⡊":"⢵","⡋":"⢴","⡌":"⢳","⡍":"⢲","⡎":"⢱","⡏":"⢰","⡐":"⢯","⡑":"⢮","⡒":"⢭","⡓":"⢬","⡔":"⢫","⡕":"⢪","⡖":"⢩","⡗":"⢨","⡘":"⢧","⡙":"⢦","⡚":"⢥","⡛":"⢤","⡜":"⢣","⡝":"⢢","⡞":"⢡","⡟":"⢠","⡠":"⢟","⡡":"⢞","⡢":"⢝","⡣":"⢜","⡤":"⢛","⡥":"⢚","⡦":"⢙","⡧":"⢘","⡨":"⢗","⡩":"⢖","⡪":"⢕","⡫":"⢔","⡬":"⢓","⡭":"⢒","⡮":"⢑","⡯":"⢐","⡰":"⢏","⡱":"⢎","⡲":"⢍","⡳":"⢌","⡴":"⢋","⡵":"⢊","⡶":"⢉","⡷":"⢈","⡸":"⢇","⡹":"⢆","⡺":"⢅","⡻":"⢄","⡼":"⢃","⡽":"⢂","⡾":"⢁","⡿":"⢀","⢀":"⡿","⢁":"⡾","⢂":"⡽","⢃":"⡼","⢄":"⡻","⢅":"⡺","⢆":"⡹","⢇":"⡸","⢈":"⡷","⢉":"⡶","⢊":"⡵","⢋":"⡴","⢌":"⡳","⢍":"⡲","⢎":"⡱","⢏":"⡰","⢐":"⡯","⢑":"⡮","⢒":"⡭","⢓":"⡬","⢔":"⡫","⢕":"⡪","⢖":"⡩","⢗":"⡨","⢘":"⡧","⢙":"⡦","⢚":"⡥","⢛":"⡤","⢜":"⡣","⢝":"⡢","⢞":"⡡","⢟":"⡠","⢠":"⡟","⢡":"⡞","⢢":"⡝","⢣":"⡜","⢤":"⡛","⢥":"⡚","⢦":"⡙","⢧":"⡘","⢨":"⡗","⢩":"⡖","⢪":"⡕","⢫":"⡔","⢬":"⡓","⢭":"⡒","⢮":"⡑","⢯":"⡐","⢰":"⡏","⢱":"⡎","⢲":"⡍","⢳":"⡌","⢴":"⡋","⢵":"⡊","⢶":"⡉","⢷":"⡈","⢸":"⡇","⢹":"⡆","⢺":"⡅","⢻":"⡄","⢼":"⡃","⢽":"⡂","⢾":"⡁","⢿":"⡀","⣀":"⠿","⣁":"⠾","⣂":"⠽","⣃":"⠼","⣄":"⠻","⣅":"⠺","⣆":"⠹","⣇":"⠸","⣈":"⠷","⣉":"⠶","⣊":"⠵","⣋":"⠴","⣌":"⠳","⣍":"⠲","⣎":"⠱","⣏":"⠰","⣐":"⠯","⣑":"⠮","⣒":"⠭","⣓":"⠬","⣔":"⠫","⣕":"⠪","⣖":"⠩","⣗":"⠨","⣘":"⠧","⣙":"⠦","⣚":"⠥","⣛":"⠤","⣜":"⠣","⣝":"⠢","⣞":"⠡","⣟":"⠠","⣠":"⠟","⣡":"⠞","⣢":"⠝","⣣":"⠜","⣤":"⠛","⣥":"⠚","⣦":"⠙","⣧":"⠘","⣨":"⠗","⣩":"⠖","⣪":"⠕","⣫":"⠔","⣬":"⠓","⣭":"⠒","⣮":"⠑","⣯":"⠐","⣰":"⠏","⣱":"⠎","⣲":"⠍","⣳":"⠌","⣴":"⠋","⣵":"⠊","⣶":"⠉","⣷":"⠈","⣸":"⠇","⣹":"⠆","⣺":"⠅","⣻":"⠄","⣼":"⠃","⣽":"⠂","⣾":"⠁","⣿":"⠀"};async function w(e,t,n=1){let a=await createImageBitmap(e),i=new OffscreenCanvas(2*t,Math.round(2*t*(a.height/a.width))),o=i.getContext("2d");o.fillStyle="white",o.fillRect(0,0,i.width,i.height),o.filter=`brightness(${n})`,o.drawImage(a,0,0,i.width,i.height);let r=o.getImageData(0,0,i.width,i.height),l=await import("/js/dither.js"),d=await l.atkinson(r);return o.putImageData(d,0,0),i.convertToBlob({type:"image/png"})}function u(e){return new Promise((t=>setTimeout(t,e)))}window.invertDotArt=function(e){return e.split("").map((e=>m[e]||e)).join("")},window.copyDotArtClickHandler=async function(e){await function(e){if(!navigator.clipboard)return void function(e){var t=document.createElement("textarea");t.value=e,t.style.top="0",t.style.left="0",t.style.position="fixed",document.body.appendChild(t),t.focus(),t.select();try{var n=document.execCommand("copy")?"successful":"unsuccessful";console.log("Copying text command was "+n)}catch(e){console.error("Fallback: Oops, unable to copy",e)}document.body.removeChild(t)}(e);navigator.clipboard.writeText(e).then((function(){console.log("Async: Copying to clipboard was successful!")}),(function(e){console.error("Async: Could not copy text: ",e)}))}(e.dataset.text);try{gtag("event","copy_dot_art_from_generator_click",{inverted:Number(e.dataset.inverted),preprocessing_mode:Number(e.dataset.preprocessingMode)})}catch(e){console.error(e)}},window.OffscreenCanvas||(window.OffscreenCanvas=class{constructor(e,t){return this.canvas=document.createElement("canvas"),this.canvas.width=e,this.canvas.height=t,this.canvas.convertToBlob=(e={})=>new Promise((t=>{this.canvas.toBlob(t,e.type)})),this.canvas}})</script>
+        let currentImage = null;
+        let currentASCII = '';
 
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WF5V0J3NPY"></script>
-    <script>function a(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],a("js",new Date),a("config","G-WF5V0J3NPY")</script>
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    currentImage = img;
+                    document.getElementById('imagePreview').innerHTML = `
+                        <img src="${e.target.result}" class="preview-image" alt="Preview">
+                    `;
+                    document.getElementById('generateBtn').disabled = false;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
 
-  </body>
+        // Generate ASCII art
+        function generateASCII() {
+            if (!currentImage) return;
 
-<!-- Mirrored from emojicombos.com/dot-art-generator by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 16 Aug 2025 11:37:50 GMT -->
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+
+            setTimeout(() => {
+                const width = parseInt(document.getElementById('width').value);
+                const threshold = parseInt(document.getElementById('threshold').value);
+                const charset = document.getElementById('charset').value;
+                const invert = document.getElementById('invert').checked;
+
+                const ascii = imageToASCII(currentImage, width, threshold, charset, invert);
+                currentASCII = ascii;
+
+                document.getElementById('asciiOutput').textContent = ascii;
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('generateBtn').disabled = false;
+            }, 100);
+        }
+
+        // Convert image to ASCII
+        function imageToASCII(img, width, threshold, charset, invert) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Calculate height maintaining aspect ratio
+            const aspectRatio = img.height / img.width;
+            const height = Math.round(width * aspectRatio * 0.5); // Adjust for character aspect ratio
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw and process image
+            ctx.drawImage(img, 0, 0, width, height);
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            // Define character sets
+            const charSets = {
+                standard: ' .,:;+=xX$&@',
+                simple: ' #',
+                blocks: ' ░▒▓█',
+                braille: '⠀⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿'
+            };
+
+            const chars = charSets[charset];
+            const result = [];
+
+            for (let y = 0; y < height; y++) {
+                let line = '';
+                for (let x = 0; x < width; x++) {
+                    const index = (y * width + x) * 4;
+                    const r = data[index];
+                    const g = data[index + 1];
+                    const b = data[index + 2];
+                    
+                    // Convert to grayscale
+                    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                    
+                    // Apply threshold and invert if needed
+                    let normalized = gray;
+                    if (invert) {
+                        normalized = 255 - gray;
+                    }
+                    
+                    // Map to character
+                    const charIndex = Math.floor((normalized / 255) * (chars.length - 1));
+                    line += chars[charIndex];
+                }
+                result.push(line);
+            }
+
+            return result.join('\n');
+        }
+
+        // Copy to clipboard
+        async function copyToClipboard() {
+            try {
+                await navigator.clipboard.writeText(currentASCII);
+                alert('ASCII art copied to clipboard!');
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = currentASCII;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('ASCII art copied to clipboard!');
+            }
+        }
+
+        // Invert ASCII art
+        function invertASCII() {
+            const charset = document.getElementById('charset').value;
+            const charSets = {
+                standard: ' .,:;+=xX$&@',
+                simple: ' #',
+                blocks: ' ░▒▓█',
+                braille: '⠀⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿'
+            };
+            
+            const chars = charSets[charset];
+            let inverted = '';
+            
+            for (let char of currentASCII) {
+                const index = chars.indexOf(char);
+                if (index !== -1) {
+                    inverted += chars[chars.length - 1 - index];
+                } else {
+                    inverted += char;
+                }
+            }
+            
+            currentASCII = inverted;
+            document.getElementById('asciiOutput').textContent = inverted;
+        }
+
+        // Download as text file
+        function downloadText() {
+            const blob = new Blob([currentASCII], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ascii-art.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Drag and drop support
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#007bff';
+            uploadArea.style.background = '#f8f9fa';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            uploadArea.style.background = 'white';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            uploadArea.style.background = 'white';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    const input = document.getElementById('fileInput');
+                    input.files = files;
+                    handleFileSelect({ target: { files: [file] } });
+                }
+            }
+        });
+    </script>
+</body>
 </html>
