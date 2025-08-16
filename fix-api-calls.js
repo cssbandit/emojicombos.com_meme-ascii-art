@@ -1,12 +1,21 @@
 // Fix for API calls that don't work in local Netlify deployment
 // Override external API calls with local functionality
 
-// Immediately override search function
+// Immediately override search function - do this first!
 window.searchForEmojis = function(keyphrase) {
     console.log('Search disabled - this is a local copy of the site');
     alert(`Search functionality is not available in this local version. You searched for: "${keyphrase}"`);
     return Promise.resolve();
 };
+
+// Also override any existing search function immediately
+if (typeof window.searchForEmojis !== 'undefined') {
+    window.searchForEmojis = function(keyphrase) {
+        console.log('Search disabled - this is a local copy of the site');
+        alert(`Search functionality is not available in this local version. You searched for: "${keyphrase}"`);
+        return Promise.resolve();
+    };
+}
 
 // Also override the async version that might exist
 window.searchForEmojis = async function(keyphrase) {
@@ -184,5 +193,17 @@ document.addEventListener('DOMContentLoaded', function() {
         return originalWindowOpen.apply(this, arguments);
     };
 });
+
+// Also run immediately to catch any existing buttons
+setTimeout(() => {
+    const editButtons = document.querySelectorAll('.edit-btn, button[onclick*="edit"], button[onclick*="dot-art-editor"]');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            alert('Edit functionality is not available in this local version.');
+        });
+    });
+}, 100);
 
 console.log('API calls fixed for local deployment');
