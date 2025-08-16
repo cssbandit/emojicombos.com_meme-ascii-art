@@ -206,4 +206,21 @@ setTimeout(() => {
     });
 }, 100);
 
+// Add CSS to disable edit buttons completely
+const style = document.createElement('style');
+style.textContent = `
+    .edit-btn, button[class*="edit"], button[onclick*="edit"] {
+        pointer-events: none !important;
+        opacity: 0.3 !important;
+        cursor: not-allowed !important;
+        background: #666 !important;
+        color: #999 !important;
+    }
+    .edit-btn:hover, button[class*="edit"]:hover, button[onclick*="edit"]:hover {
+        background: #666 !important;
+        color: #999 !important;
+    }
+`;
+document.head.appendChild(style);
+
 console.log('API calls fixed for local deployment');
