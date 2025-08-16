@@ -206,21 +206,31 @@ setTimeout(() => {
     });
 }, 100);
 
-// Add CSS to disable edit buttons completely
-const style = document.createElement('style');
-style.textContent = `
-    .edit-btn, button[class*="edit"], button[onclick*="edit"] {
-        pointer-events: none !important;
-        opacity: 0.3 !important;
-        cursor: not-allowed !important;
-        background: #666 !important;
-        color: #999 !important;
-    }
-    .edit-btn:hover, button[class*="edit"]:hover, button[onclick*="edit"]:hover {
-        background: #666 !important;
-        color: #999 !important;
-    }
-`;
-document.head.appendChild(style);
+// Completely disable edit buttons by removing onclick attributes
+document.addEventListener('DOMContentLoaded', function() {
+    // Remove onclick attributes from all edit buttons
+    const editButtons = document.querySelectorAll('.edit-btn, button[onclick*="edit"], button[onclick*="dot-art-editor"]');
+    editButtons.forEach(button => {
+        button.removeAttribute('onclick');
+        button.style.pointerEvents = 'none';
+        button.style.opacity = '0.3';
+        button.style.cursor = 'not-allowed';
+        button.style.background = '#666';
+        button.style.color = '#999';
+    });
+});
+
+// Also run immediately to catch any existing buttons
+setTimeout(() => {
+    const editButtons = document.querySelectorAll('.edit-btn, button[onclick*="edit"], button[onclick*="dot-art-editor"]');
+    editButtons.forEach(button => {
+        button.removeAttribute('onclick');
+        button.style.pointerEvents = 'none';
+        button.style.opacity = '0.3';
+        button.style.cursor = 'not-allowed';
+        button.style.background = '#666';
+        button.style.color = '#999';
+    });
+}, 100);
 
 console.log('API calls fixed for local deployment');
