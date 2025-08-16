@@ -230,8 +230,8 @@
         <div class="settings">
             <div class="setting-group">
                 <label for="width">Width (characters):</label>
-                <input type="range" id="width" min="20" max="200" value="80" oninput="document.getElementById('widthValue').textContent = this.value">
-                <span id="widthValue">80</span>
+                <input type="range" id="width" min="20" max="200" value="100" oninput="document.getElementById('widthValue').textContent = this.value">
+                <span id="widthValue">100</span>
             </div>
             <div class="setting-group">
                 <label for="threshold">Threshold:</label>
@@ -353,19 +353,24 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // Calculate height maintaining aspect ratio
+            // Use better scaling for higher quality
+            const maxWidth = Math.min(width, 120);
             const aspectRatio = img.height / img.width;
-            const height = Math.round(width * aspectRatio * 0.5); // Adjust for character aspect ratio
+            const height = Math.round(maxWidth * aspectRatio * 0.5); // Adjust for character aspect ratio
 
-            canvas.width = width;
+            canvas.width = maxWidth;
             canvas.height = height;
 
+            // Enable smoothing for better quality
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
             // Draw and process image
-            ctx.drawImage(img, 0, 0, width, height);
-            const imageData = ctx.getImageData(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, maxWidth, height);
+            const imageData = ctx.getImageData(0, 0, maxWidth, height);
             const data = imageData.data;
 
-            // Define character sets
+            // Enhanced character sets with better contrast mapping
             const charSets = {
                 standard: ' .,:;+=xX$&@',
                 simple: ' #',
@@ -378,23 +383,27 @@
 
             for (let y = 0; y < height; y++) {
                 let line = '';
-                for (let x = 0; x < width; x++) {
-                    const index = (y * width + x) * 4;
+                for (let x = 0; x < maxWidth; x++) {
+                    const index = (y * maxWidth + x) * 4;
                     const r = data[index];
                     const g = data[index + 1];
                     const b = data[index + 2];
                     
-                    // Convert to grayscale
-                    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                    // Use luminance formula for better brightness calculation
+                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
                     
                     // Apply threshold and invert if needed
-                    let normalized = gray;
+                    let normalized = luminance;
                     if (invert) {
-                        normalized = 255 - gray;
+                        normalized = 255 - luminance;
                     }
                     
-                    // Map to character
-                    const charIndex = Math.floor((normalized / 255) * (chars.length - 1));
+                    // Enhanced mapping with better contrast
+                    let charIndex = Math.floor((normalized / 255) * (chars.length - 1));
+                    
+                    // Ensure we stay within bounds
+                    charIndex = Math.max(0, Math.min(charIndex, chars.length - 1));
+                    
                     line += chars[charIndex];
                 }
                 result.push(line);

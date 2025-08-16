@@ -8,6 +8,30 @@ window.searchForEmojis = function(keyphrase) {
     return Promise.resolve();
 };
 
+// Override search form submission to prevent navigation
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.querySelector('form[action*="search"]');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const searchInput = this.querySelector('input[type="text"]');
+            if (searchInput) {
+                alert(`Search functionality is not available in this local version. You searched for: "${searchInput.value}"`);
+            }
+        });
+    }
+    
+    // Also override any search buttons
+    const searchButtons = document.querySelectorAll('button[onclick*="search"], input[type="submit"]');
+    searchButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            alert('Search functionality is not available in this local version.');
+        });
+    });
+});
+
 // Override other API calls
 window.skipKeyphraseSuggestions = true;
 
