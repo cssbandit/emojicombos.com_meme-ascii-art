@@ -8,6 +8,51 @@ window.searchForEmojis = function(keyphrase) {
     return Promise.resolve();
 };
 
+// Also override the async version that might exist
+window.searchForEmojis = async function(keyphrase) {
+    console.log('Search disabled - this is a local copy of the site');
+    alert(`Search functionality is not available in this local version. You searched for: "${keyphrase}"`);
+    return Promise.resolve();
+};
+
+// Override the specific search function that redirects to external URLs
+window.searchForEmojis = function(keyphrase) {
+    console.log('Search disabled - this is a local copy of the site');
+    alert(`Search functionality is not available in this local version. You searched for: "${keyphrase}"`);
+    return Promise.resolve();
+};
+
+// Block window.location.href redirects
+const originalLocationAssign = window.location.assign;
+window.location.assign = function(url) {
+    if (typeof url === 'string' && url.includes('emojicombos.com')) {
+        console.log('Blocked external redirect to:', url);
+        alert('External navigation is not available in this local version.');
+        return;
+    }
+    return originalLocationAssign.apply(this, arguments);
+};
+
+// Also block direct location.href assignments
+Object.defineProperty(window.location, 'href', {
+    set: function(url) {
+        if (typeof url === 'string' && url.includes('emojicombos.com')) {
+            console.log('Blocked external href redirect to:', url);
+            alert('External navigation is not available in this local version.');
+            return;
+        }
+        // Allow other redirects
+        Object.defineProperty(this, 'href', {
+            value: url,
+            writable: true,
+            configurable: true
+        });
+    },
+    get: function() {
+        return window.location.toString();
+    }
+});
+
 // Override search form submission to prevent navigation
 document.addEventListener('DOMContentLoaded', function() {
     const searchForm = document.querySelector('form[action*="search"]');
@@ -115,5 +160,29 @@ document.createElement = function(tagName) {
     }
     return element;
 };
+
+// Block edit buttons that open external sites
+document.addEventListener('DOMContentLoaded', function() {
+    // Override edit button clicks
+    const editButtons = document.querySelectorAll('.edit-btn, button[onclick*="edit"], button[onclick*="dot-art-editor"]');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            alert('Edit functionality is not available in this local version.');
+        });
+    });
+    
+    // Override window.open calls to external sites
+    const originalWindowOpen = window.open;
+    window.open = function(url, target, features) {
+        if (typeof url === 'string' && (url.includes('emojicombos.com') || url.includes('dot-art-editor'))) {
+            console.log('Blocked external window.open to:', url);
+            alert('External editor is not available in this local version.');
+            return null;
+        }
+        return originalWindowOpen.apply(this, arguments);
+    };
+});
 
 console.log('API calls fixed for local deployment');
